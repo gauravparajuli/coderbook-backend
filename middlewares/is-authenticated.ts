@@ -32,8 +32,7 @@ const isAuthenticated = (
 
     // verify token
     try {
-        const decoded = jwt.verify(token, secretKey) as JwtPayload
-        const { user } = decoded
+        const { user } = jwt.verify(token, secretKey) as JwtPayload
         req.user = user
         next()
     } catch (err: any) {
