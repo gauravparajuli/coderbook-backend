@@ -1,6 +1,7 @@
 import { Router, Request, Response, NextFunction } from 'express'
 import { check, validationResult } from 'express-validator'
 import bcrypt from 'bcryptjs'
+import jwt from 'jsonwebtoken'
 import gravatar from 'gravatar'
 import User from '../models/User'
 
@@ -37,13 +38,15 @@ router.post(
             }
 
             // get user gravatar
-            const avatar = gravatar.url(email, {
-                s: '200',
-                r: 'pg',
-                d: 'mm',
-            })
+            const avatar = gravatar
+                .url(email, {
+                    s: '200',
+                    r: 'pg',
+                    d: 'mm',
+                })
+                .slice(2)
 
-            user = new User({ name, email, password, avatar })
+            user = new User({ name, email, password, gravatar: avatar })
 
             // encrypt user password
             const salt = await bcrypt.genSalt(7)
@@ -51,8 +54,16 @@ router.post(
             await user.save()
 
             // send json web token
+            const payload = {
+                user: {
+                    id: user.id,
+                },
+            }
+            const token = jwt.sign(payload, process.env.JWT_SECRET_KEY!, {
+                expiresIn: 3600 * 24 * 7,
+            })
 
-            res.status(200).json({ message: 'user registered' })
+            res.status(201).json({ token })
         } catch (err: any) {
             console.error(err.message)
             res.status(500).send('Internal server error')
