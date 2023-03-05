@@ -1,5 +1,8 @@
 import jwt from 'jsonwebtoken'
 import { Request, Response, NextFunction } from 'express'
+import dotenv from 'dotenv'
+
+dotenv.config()
 
 const secretKey = process.env.JWT_SECRET_KEY!
 
@@ -20,7 +23,8 @@ const isAuthenticated = (
     res: Response,
     next: NextFunction
 ) => {
-    const token = req.header('Authorization')!.split(' ')[1]
+    const authorization = req.header('Authorization')
+    const token = authorization ? authorization!.split(' ')[1] : undefined
 
     if (!token) {
         return res.status(401).json({ msg: 'No token, authorization denied' })
@@ -32,7 +36,8 @@ const isAuthenticated = (
         const { user } = decoded
         req.user = user
         next()
-    } catch {
+    } catch (err: any) {
+        console.log(err.message)
         res.status(401).json({ msg: 'Invalid token' })
     }
 }
