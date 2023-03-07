@@ -196,4 +196,50 @@ router.delete(
     }
 )
 
+// @route      PUT api/profile/experience
+// @desc       create/update profile experience
+// @access     Private
+router.put(
+    '/experience',
+    isAuthenticated,
+    [
+        check('title', 'Title is required').not().isEmpty(),
+        check('company', 'Company is required').not().isEmpty(),
+        check('from', 'From is required').not().isEmpty(),
+    ],
+    async (req: Request & userProperty, res: Response, next: NextFunction) => {
+        const errors = validationResult(req)
+        if (!errors.isEmpty()) {
+            return res.status(400).json({ errors: errors.array() })
+        }
+
+        const { title, company, location, from, to, current, description } =
+            req.body
+
+        const newExperience = {
+            title,
+            company,
+            location,
+            from,
+            to,
+            current,
+            description,
+        }
+
+        try {
+            const profile = await Profile.findOne({ user: req.user!.id })
+            if (!profile)
+                return res.status(404).json({ message: 'Profile not found' })
+
+            profile.experience.unshift(newExperience)
+            await profile.save()
+
+            res.status(201).json(profile)
+        } catch (err: any) {
+            console.log(err.message)
+            res.status(500).send('Internal server error')
+        }
+    }
+)
+
 export default router
