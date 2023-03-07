@@ -26,11 +26,46 @@ interface profile {
 }
 
 // @route      GET api/profile
-// @desc       Test route
+// @desc       Get all profiles
 // @access     Public
-router.get('/', (req: Request, res: Response, next: NextFunction) => {
-    res.status(200).json({ message: 'profile route working' })
+router.get('/', async (req: Request, res: Response, next: NextFunction) => {
+    try {
+        const profiles = await Profile.find().populate('user', [
+            'name',
+            'gravatar',
+        ])
+        res.status(200).json(profiles)
+    } catch (err: any) {
+        console.log(err.message)
+        res.status(500).send('Internal server error')
+    }
 })
+
+// @route      GET api/profile/user/:userId
+// @desc       Get profile by user id
+// @access     Public
+router.get(
+    '/user/:userId',
+    async (req: Request, res: Response, next: NextFunction) => {
+        const { userId } = req.params
+        try {
+            const profile = await Profile.findOne({ user: userId }).populate(
+                'user',
+                ['name', 'gravatar']
+            )
+
+            if (!profile)
+                return res.status(404).json({ msg: 'Profile not found' })
+
+            res.status(200).json(profile)
+        } catch (err: any) {
+            console.log(err.message)
+            if (err.kind == 'ObjectId')
+                return res.status(404).json({ msg: 'Profile not found' })
+            res.status(500).send('Internal server error')
+        }
+    }
+)
 
 // @route      GET api/profile/i
 // @desc       get currently authenticated user profile
@@ -42,7 +77,7 @@ router.get(
         try {
             const profile = await Profile.findOne({
                 user: req.user!.id,
-            }).populate('User', ['name', 'avatar'])
+            }).populate('user', ['name', 'gravatar'])
             // console.log(profile)
 
             if (!profile) {

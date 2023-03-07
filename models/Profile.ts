@@ -5,7 +5,7 @@ const profileSchema = new Schema(
         user: {
             type: Schema.Types.ObjectId,
             required: true,
-            ref: 'user',
+            ref: 'User',
         },
         company: {
             type: String,
@@ -22,7 +22,7 @@ const profileSchema = new Schema(
         },
         skills: {
             type: [String],
-            requird: true,
+            required: true,
         },
         bio: {
             type: String,
