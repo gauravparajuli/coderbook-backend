@@ -164,8 +164,31 @@ router.put(
             profile = new Profile(profileFields)
             await profile.save()
 
-            console.log(profileFields)
             res.status(201).json(profile)
+        } catch (err: any) {
+            console.log(err.message)
+            res.status(500).send('Internal server error')
+        }
+    }
+)
+
+// @route      DELETE api/profile/
+// @desc       delete user, profile and posts
+// @access     Private
+router.delete(
+    '/',
+    isAuthenticated,
+    async (req: Request & userProperty, res: Response, next: NextFunction) => {
+        try {
+            // remove profile
+            await Profile.findOneAndRemove({ user: req.user!.id })
+
+            // remove posts
+
+            // remove user
+            await User.findOneAndRemove({ _id: req.user!.id })
+
+            res.status(204).send()
         } catch (err: any) {
             console.log(err.message)
             res.status(500).send('Internal server error')
