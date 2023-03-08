@@ -253,13 +253,60 @@ router.delete(
     '/education/:eduId',
     isAuthenticated,
     async (req: Request & userProperty, res: Response, next: NextFunction) => {
-        const { expId } = req.params
+        const { eduId } = req.params
         try {
             await Profile.findOneAndUpdate(
                 { user: req.user!.id },
                 { $pull: { education: { _id: eduId } } }
             )
             res.status(204).json()
+        } catch (err: any) {
+            console.log(err.message)
+            res.status(500).send('Internal server error')
+        }
+    }
+)
+
+// @route      PUT api/profile/education
+// @desc       create/update profile education
+// @access     Private
+router.put(
+    '/education',
+    isAuthenticated,
+    [
+        check('school', 'School is required').not().isEmpty(),
+        check('degree', 'Degree is required').not().isEmpty(),
+        check('fieldOfStudy', 'Field of Study is required').not().isEmpty(),
+        check('from', 'From is required').not().isEmpty(),
+    ],
+    async (req: Request & userProperty, res: Response, next: NextFunction) => {
+        const errors = validationResult(req)
+        if (!errors.isEmpty()) {
+            return res.status(400).json({ errors: errors.array() })
+        }
+
+        const { school, degree, fieldOfStudy, from, to, current, description } =
+            req.body
+
+        const newEducation = {
+            school,
+            degree,
+            fieldOfStudy,
+            from,
+            to,
+            current,
+            description,
+        }
+
+        try {
+            const profile = await Profile.findOne({ user: req.user!.id })
+            if (!profile)
+                return res.status(404).json({ message: 'Profile not found' })
+
+            profile.education.unshift(newEducation)
+            await profile.save()
+
+            res.status(201).json(profile)
         } catch (err: any) {
             console.log(err.message)
             res.status(500).send('Internal server error')
