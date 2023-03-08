@@ -246,4 +246,25 @@ router.delete(
     }
 )
 
+// @route      DELETE api/profile/education/:eduId
+// @desc       delete profile education
+// @access     Private
+router.delete(
+    '/education/:eduId',
+    isAuthenticated,
+    async (req: Request & userProperty, res: Response, next: NextFunction) => {
+        const { expId } = req.params
+        try {
+            await Profile.findOneAndUpdate(
+                { user: req.user!.id },
+                { $pull: { education: { _id: eduId } } }
+            )
+            res.status(204).json()
+        } catch (err: any) {
+            console.log(err.message)
+            res.status(500).send('Internal server error')
+        }
+    }
+)
+
 export default router
