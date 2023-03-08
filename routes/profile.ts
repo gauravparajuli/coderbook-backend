@@ -4,7 +4,7 @@ import { userProperty } from '../middlewares/is-authenticated'
 import { check, validationResult } from 'express-validator'
 import Profile, { IProfile, IExperience } from '../models/Profile'
 import User from '../models/User'
-import { Schema } from 'mongoose'
+import axios from 'axios'
 
 const router = Router()
 
@@ -308,6 +308,38 @@ router.put(
 
             res.status(201).json(profile)
         } catch (err: any) {
+            console.log(err.message)
+            res.status(500).send('Internal server error')
+        }
+    }
+)
+
+// @route      GET api/profile/github/:username
+// @desc       get user repos from github
+// @access     Public
+router.get(
+    '/github/:username',
+    async (req: Request & userProperty, res: Response, next: NextFunction) => {
+        const { username } = req.params
+        try {
+            const { data, status, statusText } = await axios({
+                method: 'get',
+                url: `https://api.github.com/users/${username}/repos?per_page=5&sort=created:asc&client_id=${process.env.GITHUB_CLIENT_ID}&client_secret=${process.env.GITHUB_SECRET_KEY}`,
+                headers: {
+                    'user-agent': 'node.js',
+                },
+            })
+            if (status !== 200)
+                return res
+                    .status(404)
+                    .json({ msg: 'Github profile was not found' })
+
+            res.status(200).json(data)
+        } catch (err: any) {
+            if (err.response.status === 404)
+                return res
+                    .status(404)
+                    .json({ msg: 'Github profile was not found' })
             console.log(err.message)
             res.status(500).send('Internal server error')
         }
