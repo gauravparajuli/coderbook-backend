@@ -1,4 +1,44 @@
-import { Schema, model } from 'mongoose'
+import { Schema, model, Document } from 'mongoose'
+
+export interface IExperience extends Schema.Types.Subdocument {
+    title: string
+    company: string
+    location?: string
+    from: Date
+    to?: Date
+    current?: boolean
+    description?: string
+}
+
+export interface IEducation extends Document {
+    school: string
+    degree: string
+    fieldOfStudy: string
+    from: Date
+    to?: Date
+    current?: boolean
+    description?: string
+}
+
+export interface IProfile extends Document {
+    user: string
+    company?: string
+    website?: string
+    location?: string
+    bio?: string
+    status: string
+    githubUsername?: string
+    skills: string | [string]
+    social?: {
+        youtube?: string
+        facebook?: string
+        twitter?: string
+        instagram?: string
+        linkedIn?: string
+    }
+    experience?: [IExperience]
+    education?: [IEducation]
+}
 
 const profileSchema = new Schema(
     {

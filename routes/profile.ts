@@ -2,28 +2,11 @@ import { Router, Request, Response, NextFunction } from 'express'
 import isAuthenticated from '../middlewares/is-authenticated'
 import { userProperty } from '../middlewares/is-authenticated'
 import { check, validationResult } from 'express-validator'
-import Profile from '../models/Profile'
+import Profile, { IProfile, IExperience } from '../models/Profile'
 import User from '../models/User'
+import { Schema } from 'mongoose'
 
 const router = Router()
-
-interface profile {
-    user: string
-    company?: string
-    website?: string
-    location?: string
-    bio?: string
-    status: string
-    githubUsername?: string
-    skills: string
-    social?: {
-        youtube?: string
-        facebook?: string
-        twitter?: string
-        instagram?: string
-        linkedIn?: string
-    }
-}
 
 // @route      GET api/profile
 // @desc       Get all profiles
@@ -126,7 +109,7 @@ router.put(
         } = req.body
 
         // build profile fields
-        const profileFields = {} as profile
+        const profileFields = {} as IProfile
         profileFields.user = req.user!.id
         if (company) profileFields.company = company
         if (website) profileFields.website = website
@@ -235,6 +218,27 @@ router.put(
             await profile.save()
 
             res.status(201).json(profile)
+        } catch (err: any) {
+            console.log(err.message)
+            res.status(500).send('Internal server error')
+        }
+    }
+)
+
+// @route      DELETE api/profile/experience/:expId
+// @desc       delete profile experience
+// @access     Private
+router.delete(
+    '/experience/:expId',
+    isAuthenticated,
+    async (req: Request & userProperty, res: Response, next: NextFunction) => {
+        const { expId } = req.params
+        try {
+            await Profile.findOneAndUpdate(
+                { user: req.user!.id },
+                { $pull: { experience: { _id: expId } } }
+            )
+            res.status(204).json()
         } catch (err: any) {
             console.log(err.message)
             res.status(500).send('Internal server error')
