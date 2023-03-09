@@ -141,4 +141,31 @@ router.put(
     }
 )
 
+// @route      PUT api/posts/unlike/:postId
+// @desc       Unlike a post
+// @access     Private
+router.put(
+    '/unlike/:postId',
+    isAuthenticated,
+    async (req: Request & userProperty, res: Response, next: NextFunction) => {
+        const { postId } = req.params
+        try {
+            const post = await Post.findById(postId)
+
+            if (!post) return res.status(404).json({ msg: 'Post not found' })
+
+            post.likes = post.likes.filter(
+                (like) => like.user!.toString() !== req.user!.id
+            )
+            await post.save()
+            res.status(200).json(post.likes)
+        } catch (err: any) {
+            console.log(err.message)
+            if (err.kind === 'ObjectId')
+                return res.status(404).json({ msg: 'Post not found' })
+            res.status(500).send('Internal server error')
+        }
+    }
+)
+
 export default router
