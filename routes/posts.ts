@@ -5,6 +5,7 @@ import { check, validationResult } from 'express-validator'
 import Post from '../models/Post'
 import Profile from '../models/Profile'
 import User from '../models/User'
+import { Types } from 'mongoose'
 
 const router = Router()
 
@@ -90,11 +91,47 @@ router.delete(
     async (req: Request & userProperty, res: Response, next: NextFunction) => {
         const { postId } = req.params
         try {
-            const post = await Post.findOne({ _id: postId, user: req.user!.id })
+            const post = await Post.findOneAndRemove({
+                _id: postId,
+                user: req.user!.id,
+            })
 
             if (!post) return res.status(404).json({ msg: 'Post not found' })
 
             res.status(204).send()
+        } catch (err: any) {
+            console.log(err.message)
+            if (err.kind === 'ObjectId')
+                return res.status(404).json({ msg: 'Post not found' })
+            res.status(500).send('Internal server error')
+        }
+    }
+)
+
+// @route      PUT api/posts/like/:postId
+// @desc       Like a post
+// @access     Private
+router.put(
+    '/like/:postId',
+    isAuthenticated,
+    async (req: Request & userProperty, res: Response, next: NextFunction) => {
+        const { postId } = req.params
+        try {
+            const post = await Post.findById(postId)
+
+            if (!post) return res.status(404).json({ msg: 'Post not found' })
+
+            // check if the post has  already been liked
+            if (
+                post.likes.filter(
+                    (like) => like.user!.toString() === req.user!.id
+                ).length > 0
+            )
+                return res.status(400).json({ msg: 'Post already liked' })
+
+            post.likes.unshift({ user: new Types.ObjectId(req.user!.id) })
+            await post.save()
+            res.status(201).json(post.likes)
         } catch (err: any) {
             console.log(err.message)
             if (err.kind === 'ObjectId')
