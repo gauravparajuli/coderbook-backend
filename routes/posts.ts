@@ -42,4 +42,66 @@ router.post(
     }
 )
 
+// @route      GET api/posts
+// @desc       Get all posts
+// @access     Private
+router.get(
+    '/',
+    isAuthenticated,
+    async (req: Request & userProperty, res: Response, next: NextFunction) => {
+        try {
+            const posts = await Post.find().sort({ createdAt: -1 })
+            res.status(200).json(posts)
+        } catch (err: any) {
+            console.log(err.message)
+            res.status(500).send('Internal server error')
+        }
+    }
+)
+
+// @route      GET api/posts/:postId
+// @desc       Get a post by it's id
+// @access     Private
+router.get(
+    '/:postId',
+    isAuthenticated,
+    async (req: Request & userProperty, res: Response, next: NextFunction) => {
+        const { postId } = req.params
+        try {
+            const post = await Post.findById(postId)
+
+            if (!post) return res.status(404).json({ msg: 'Post not found' })
+            res.status(200).json(post)
+        } catch (err: any) {
+            console.log(err.message)
+            if (err.kind === 'ObjectId')
+                return res.status(404).json({ msg: 'Post not found' })
+            res.status(500).send('Internal server error')
+        }
+    }
+)
+
+// @route      DELETE api/posts/:postId
+// @desc       Delete a post by it's id
+// @access     Private
+router.delete(
+    '/:postId',
+    isAuthenticated,
+    async (req: Request & userProperty, res: Response, next: NextFunction) => {
+        const { postId } = req.params
+        try {
+            const post = await Post.findOne({ _id: postId, user: req.user!.id })
+
+            if (!post) return res.status(404).json({ msg: 'Post not found' })
+
+            res.status(204).send()
+        } catch (err: any) {
+            console.log(err.message)
+            if (err.kind === 'ObjectId')
+                return res.status(404).json({ msg: 'Post not found' })
+            res.status(500).send('Internal server error')
+        }
+    }
+)
+
 export default router
