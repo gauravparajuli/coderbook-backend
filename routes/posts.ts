@@ -205,4 +205,40 @@ router.post(
     }
 )
 
+// @route      DELETE api/posts/comment/:postId/:commentId
+// @desc       Delete comment from post
+// @access     Private
+router.post(
+    '/comment/:postId/:commentId',
+    isAuthenticated,
+    async (req: Request & userProperty, res: Response, next: NextFunction) => {
+        try {
+            const errors = validationResult(req)
+            if (!errors.isEmpty()) {
+                return res.status(400).json({ errors: errors.array() })
+            }
+
+            const user = await User.findById(req.user!.id).select('-password')
+            const post = await Post.findById(req.params.postId)
+
+            if (!user) return res.status(404).json({ msg: 'User not found' })
+            if (!post) return res.status(404).json({ msg: 'Post not found' })
+
+            const newComment = {
+                text: req.body.text,
+                name: user.name,
+                gravatar: user.gravatar,
+                user: user.id,
+            }
+
+            post.comments.unshift(newComment)
+            await post.save()
+            res.status(201).json(post.comments)
+        } catch (err: any) {
+            console.log(err.message)
+            res.status(500).send('Internal server error')
+        }
+    }
+)
+
 export default router
